@@ -6,7 +6,7 @@ const Tabs = ({ tabs, setTabs }) => {
 
 
   const onTabClick = (tab) => {
-    const tabsList = ["Dashboard", "Indikator", "Manual", "Block"];
+    const tabsList = ["Dashboard", "Indeks", "Manual", "Block"];
     setActiveTab(tabsList[tab]);
     setTabs(tab);
   }
@@ -32,13 +32,13 @@ const Tabs = ({ tabs, setTabs }) => {
           href="#"
           aria-current="page"
           className={`inline-block p-4 rounded-t-lg ${
-            activeTab === "Indikator"
+            activeTab === "Indeks"
               ? "bg-gray-800 text-white active dark:bg-gray-800 dark:text-white"
               : "hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-300"
           }`}
           onClick={() => onTabClick(1)}
         >
-          Indikator
+          Indeks
         </a>
       </li>
       <li className="me-2">

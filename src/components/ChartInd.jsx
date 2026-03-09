@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,7 +17,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 const Charts = ({ data }) => {
@@ -24,49 +26,42 @@ const Charts = ({ data }) => {
     return <div className="py-4 text-gray-300">No data to display</div>;
   }
 
+  // label = nama pegawai
   const labels = useMemo(
-    () => data.map((it) => it.nama ?? it.name ?? "—"),
+    () => data.map((it) => it.nama ?? "—"),
     [data]
   );
 
-  const jenis12 = useMemo(() => ({
-    labels,
-    datasets: [
-      {
-        label: "Pagi 1",
-        data: data.map((it) => Number(it.jenis1 ?? 0)),
-        backgroundColor: "rgba(54, 162, 235, 0.7)",
-        borderRadius: 10,
-      },
-      {
-        label: "Pagi 2",
-        data: data.map((it) => Number(it.jenis2 ?? 0)),
-        backgroundColor: "rgba(255, 159, 64, 0.7)",
-        borderRadius: 10,
-      },
-    ],
-  }), [data, labels]);
+  // value = indikator
+  const values = useMemo(
+    () => data.map((it) => Number(it.indikator ?? 0)),
+    [data]
+  );
 
-  const jenis34 = useMemo(() => ({
-    labels,
-    datasets: [
-      {
-        label: "Sore",
-        data: data.map((it) => Number(it.jenis3 ?? 0)),
-        backgroundColor: "rgba(75, 192, 192, 0.7)",
-        borderRadius: 10,
-      },
-      {
-        label: "Bukti Dukung",
-        data: data.map((it) => Number(it.jenis4 ?? 0)),
-        backgroundColor: "rgba(153, 102, 255, 0.7)",
-        borderRadius: 10,
-      },
-    ],
-  }), [data, labels]);
+  const getColor = (value) => {
+    if (value == 100) return "rgba(54, 162, 235, 0.7)"; // hijau
+    if (value == 99) return "rgba(234,179,8,0.8)"; // kuning
+    return "rgba(239,68,68,0.8)"; 
+  };
+
+  const dataMemo = useMemo(
+    () => ({
+      labels,
+      datasets: [
+        {
+          label: "Indeks",
+          data: values,
+          backgroundColor:  values.map((v) => getColor(v)),
+          borderRadius: 10,
+          barThickness: 25,
+        },
+      ],
+    }),
+    [labels, values]
+  );
 
   const options = {
-    indexAxis: "y",
+    indexAxis: "y", // horizontal bar
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -78,6 +73,15 @@ const Charts = ({ data }) => {
       },
       title: {
         display: false,
+      },
+      datalabels: {
+        color: "#000",
+        anchor: "middle",
+        align: "right",
+        font: {
+          weight: "bold",
+        },
+        formatter: (value) => value
       },
       tooltip: {
         mode: "index",
@@ -94,28 +98,25 @@ const Charts = ({ data }) => {
     },
     scales: {
       x: {
-        stacked: false,
+        beginAtZero: true,
         ticks: {
           color: "#000000",
-          callback: function (value, index) {
-            const label = this.getLabelForValue(value) ?? "";
-            return label.length > 30 ? label.slice(0, 27) + "..." : label;
-          },
         },
         grid: {
-          color: "rgba(255, 255, 255, 0.08)",
+          color: "rgba(0,0,0,0.05)",
           drawBorder: false,
         },
       },
       y: {
-        beginAtZero: true,
         ticks: {
-          precision: 0,
           color: "#000000",
+          callback: function (value) {
+            const label = this.getLabelForValue(value);
+            return label.length > 30 ? label.slice(0, 27) + "..." : label;
+          },
         },
         grid: {
-          color: "rgba(255, 255, 255, 0.08)",
-          drawBorder: false,
+          display: false,
         },
       },
     },
@@ -123,9 +124,14 @@ const Charts = ({ data }) => {
 
   return (
     <div className="space-y-6">
-      <div className="p-4 pb-14" style={{ height: 360 }}>
-        <h3 className="text-lg font-semibold text-black mb-2">Pagi</h3>
-        <Bar data={jenis12} options={options} />
+      <div
+  className="p-4 pb-14"
+  style={{ height: data.length * 45 }}
+>
+        <h3 className="text-lg font-semibold text-black mb-2">
+          Indeks Benji
+        </h3>
+        <Bar data={dataMemo} options={options} />
       </div>
     </div>
   );

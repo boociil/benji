@@ -2,6 +2,9 @@ import React, { use } from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Chart from "../components/Chart";
+import excelLogo from "../assets/excel.png";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const Dashboard = () => {
 
@@ -37,6 +40,72 @@ const Dashboard = () => {
       const totalB = (b.jenis3 ?? 0) + (b.jenis4 ?? 0);
       return totalB - totalA;
     });
+  };
+
+  const downloadExcel = (data) => {
+
+    const worksheetData = data.map((item, index) => {
+      const date = new Date(item.tanggal);
+
+      const formattedDate = date.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      return {
+        No: index + 1,
+        Nama: item.nama,
+        Jenis: item.jenis,
+        Tanggal: formattedDate
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Eval");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    });
+
+    const file = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+
+    saveAs(file, "data_eval_siakip_" + bulan + "_" + tahun + ".xlsx");
+  };
+
+  const onDownloadClick = async () => {
+
+    let bulanString = "";
+        if (bulan < 10) {
+          bulanString = "0" + bulan;
+        } else {
+          bulanString = "" + bulan;
+        }
+
+    const dataDownload = await axios.post(
+      apiUrl + "api/v1/export-excel",
+      {
+        tahun: tahun, // atau singkat: { tahun, bulan }
+        bulan: bulanString,
+      } ,
+      { 
+      headers: {
+        "Content-Type": "application/json",
+        "x-password": "katasore2025",
+      }
+      }
+    );  
+
+    // console.log(dataDownload.data.data);
+    downloadExcel(dataDownload.data.data);
+    
   };
 
   useEffect(() => {
@@ -208,6 +277,19 @@ const Dashboard = () => {
           </div>
           <div className="hidden md:block">
             <Chart data={data} />
+          </div>
+        </>
+      )}
+
+      {/* Download Button */}
+      {!loading && (
+        <>
+          <div className="flex gap-8 mt-4 w-fit py-1 rounded-xl ">  
+            Download
+          </div>
+
+          <div className="flex gap-8 mb-4 bg-white w-fit py-1 rounded-xl shadow-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200" onClick={onDownloadClick}>
+            <img src={excelLogo} alt="Excel Logo" className="w-12"/>
           </div>
         </>
       )}
