@@ -2,6 +2,9 @@ import React, { use } from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ChartInd from "../components/ChartInd";
+import excelLogo from "../assets/excel.png";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const Indikator = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -39,27 +42,24 @@ const Indikator = () => {
           }
         );
 
-        // console.log("raw response:", response);
-        console.table("response.data:", response.data.data);
-
         // setSortedPagi(sortLeaderboardPagi(response.data.data));
         // setSortedSore(sortLeaderboardSore(response.data.data));
         setData(response.data.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
+       
         // tangani error axios lebih spesifik
         if (error.response) {
           // server memberikan response (status code di luar 2xx)
           setErrorMsg(
             `Server error: ${error.response.status} ${error.response.statusText}`
           );
-          console.error("response data:", error.response.data);
+          
         } else if (error.request) {
           // request dibuat tapi tidak ada response (mungkin CORS atau network)
           setErrorMsg(
             "No response from server. Possible network or CORS issue."
           );
-          console.error("request:", error.request);
+          
         } else {
           // error saat setup request
           setErrorMsg(error.message);
@@ -71,6 +71,49 @@ const Indikator = () => {
 
     fetchData();
   }, [bulan, tahun]);
+
+    const downloadExcel = (data) => {
+  
+      const worksheetData = data.map((item, index) => {
+        const date = new Date(item.tanggal);
+  
+        const formattedDate = date.toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+  
+        return {
+          No: index + 1,
+          Nama: item.nama,
+          Indeks : item.indikator,
+        };
+      });
+  
+      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+  
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Eval");
+  
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      });
+  
+      const file = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+  
+      saveAs(file, "data_indeks_benji_" + bulan + "_" + tahun + ".xlsx");
+    };
+
+  const onDownloadClick = async () => {
+
+    downloadExcel(data);
+    
+  };
 
   const generateMonthOptions = () => {
     const monthNames = [
@@ -128,6 +171,18 @@ const Indikator = () => {
           <ChartInd data={data} />
         )}
       </div>
+
+      {!loading && (
+              <>
+                <div className="flex gap-8 mt-4 w-fit py-1 rounded-xl ">  
+                  Download
+                </div>
+      
+                <div className="flex gap-8 mb-4 bg-white w-fit py-1 rounded-xl shadow-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200" onClick={onDownloadClick}>
+                  <img src={excelLogo} alt="Excel Logo" className="w-12"/>
+                </div>
+              </>
+            )}
     </div>
   );
 };

@@ -133,8 +133,6 @@ const Dashboard = () => {
           }
         );
 
-        // console.log("raw response:", response);
-        console.table("response.data:", response.data.data);
         setSortedPagi(sortLeaderboardPagi(response.data.data));
         setSortedSore(sortLeaderboardSore(response.data.data));
         setData(response.data.data);
